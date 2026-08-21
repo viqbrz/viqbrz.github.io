@@ -10,6 +10,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Đếm Ngược">
 
+    <!-- THAY ICON HOME SCREEN IPHONE TẠI ĐÂY -->
+    <!-- Bạn hãy thay đường link ảnh png bên dưới thành link ảnh logo/icon của bạn (kích thước gợi ý: 180x180 px) -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3652/3652191.png">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Thư viện Âm Lịch Việt Nam -->
@@ -135,7 +139,6 @@
             return `${gan} ${zhi}`;
         }
 
-        // Dữ liệu sự kiện khởi tạo
         let events = JSON.parse(localStorage.getItem('countdown_events')) || [
             { id: 1, title: "Tết Nguyên Đán Đinh Mùi 2027", targetDate: "2027-02-06T00:00", type: "solar" },
             { id: 2, title: "Quốc Khánh Việt Nam", targetDate: "2026-09-02T00:00", type: "solar" }
@@ -254,7 +257,6 @@
             document.getElementById("event-title").innerText = activeEvent.title;
 
             if (typeof Lunar !== 'undefined') {
-                // Xử lý Ngày Âm lịch Hôm nay 
                 const lunar = Lunar.fromDate(now);
                 const lunarDay = String(lunar.getDay()).padStart(2, '0');
                 const lunarMonth = String(lunar.getMonth()).padStart(2, '0');
@@ -264,7 +266,6 @@
                 document.getElementById("lunar-date").innerText = 
                     `Âm lịch: ${lunarDay}/${lunarMonth}/${lunarYearNum} - ${lunarYearGanZhi}`;
                 
-                // Xử lý Ngày Âm lịch Sự kiện
                 const target = getTargetDateObject(activeEvent);
                 const targetLunar = Lunar.fromDate(target);
                 const tLunarDay = String(targetLunar.getDay()).padStart(2, '0');
