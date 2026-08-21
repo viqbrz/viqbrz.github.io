@@ -10,8 +10,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Countdown">
 
-    <!-- THAY ICON HOME SCREEN IPHONE TẠI ĐÂY -->
-    <!-- Bạn hãy thay đường link ảnh png bên dưới thành link ảnh logo/icon của bạn (kích thước gợi ý: 180x180 px) -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693507.png">
 
     <!-- Tailwind CSS -->
@@ -110,14 +108,21 @@
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Loại lịch</label>
                     <select id="input-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
                         <option value="solar">Dương lịch</option>
-                        <option value="lunar">Âm lịch</option>
+                        <option value="lunar">Âm lịch (Tết Nguyên Đán)</option>
                     </select>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Thời gian diễn ra</label>
-                    <input type="datetime-local" id="input-date" required 
-                        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Ngày diễn ra (dd/mm/yyyy)</label>
+                        <input type="text" id="input-date-str" required placeholder="15/05/2026" pattern="\d{1,2}/\d{1,2}/\d{4}" title="Vui lòng nhập định dạng dd/mm/yyyy"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Giờ (mặc định 0h)</label>
+                        <input type="time" id="input-time" value="00:00"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
+                    </div>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-2">
@@ -140,12 +145,13 @@
         }
 
         let events = JSON.parse(localStorage.getItem('countdown_events')) || [
-            { id: 1, title: "Tết Nguyên Đán Đinh Mùi 2027", targetDate: "2027-02-06T00:00", type: "solar" },
-            { id: 2, title: "Quốc Khánh Việt Nam", targetDate: "2026-09-02T00:00", type: "solar" }
+            { id: 1, title: "Tết Nguyên Đán", targetDate: "2027-02-06T00:00", type: "lunar" },
+            { id: 2, title: "Sinh nhật Ánh ngu", targetDate: "2026-12-08T00:00", type: "solar" },
+            { id: 3, title: "Quốc Khánh Việt Nam", targetDate: "2026-09-02T00:00", type: "solar" }
         ];
         
         let selectedEventId = Number(localStorage.getItem('selected_event_id')) || events[0].id;
-        const startDate = new Date();
+        let startDate = new Date();
 
         function toggleModal(modalId, show) {
             const modal = document.getElementById(modalId);
@@ -160,6 +166,7 @@
         function openAddModal() {
             toggleModal('list-modal', false);
             document.getElementById("event-form").reset();
+            document.getElementById("input-time").value = "00:00";
             toggleModal('add-modal', true);
         }
 
@@ -174,10 +181,13 @@
                     isSelected ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800'
                 }`;
                 
+                const d = new Date(item.targetDate);
+                const formattedDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
                 div.innerHTML = `
                     <div onclick="selectEvent(${item.id})" class="flex-1">
                         <div class="text-sm font-bold ${isSelected ? 'text-yellow-400' : 'text-slate-200'}">${item.title}</div>
-                        <div class="text-[10px] text-slate-400">${item.type === 'lunar' ? 'Âm lịch' : 'Dương lịch'}: ${item.targetDate.replace('T', ' ')}</div>
+                        <div class="text-[10px] text-slate-400">${item.type === 'lunar' ? 'Âm lịch (Tết)' : 'Dương lịch'}: ${formattedDate}</div>
                     </div>
                     ${events.length > 1 ? `
                         <button onclick="deleteEvent(event, ${item.id})" class="text-xs text-slate-500 hover:text-red-400 px-2 py-1">Xóa</button>
@@ -190,6 +200,7 @@
         function selectEvent(id) {
             selectedEventId = id;
             localStorage.setItem('selected_event_id', id);
+            startDate = new Date();
             toggleModal('list-modal', false);
             updateTodayInfo();
             updateCountdown();
@@ -197,15 +208,31 @@
 
         function addNewEvent(e) {
             e.preventDefault();
+            const dateStr = document.getElementById("input-date-str").value.trim();
+            const timeStr = document.getElementById("input-time").value || "00:00";
+            
+            const parts = dateStr.split('/');
+            if (parts.length !== 3) {
+                alert("Vui lòng nhập ngày theo định dạng dd/mm/yyyy");
+                return;
+            }
+
+            const day = String(parts[0]).padStart(2, '0');
+            const month = String(parts[1]).padStart(2, '0');
+            const year = parts[2];
+
+            const isoTargetDate = `${year}-${month}-${day}T${timeStr}`;
+
             const newEvent = {
                 id: Date.now(),
                 title: document.getElementById("input-title").value,
-                targetDate: document.getElementById("input-date").value,
+                targetDate: isoTargetDate,
                 type: document.getElementById("input-type").value
             };
 
             events.push(newEvent);
             selectedEventId = newEvent.id;
+            startDate = new Date();
             
             localStorage.setItem('countdown_events', JSON.stringify(events));
             localStorage.setItem('selected_event_id', selectedEventId);
@@ -233,16 +260,35 @@
         }
 
         function getTargetDateObject(eventItem) {
-            const dateObj = new Date(eventItem.targetDate);
+            const now = new Date();
+            const originalDate = new Date(eventItem.targetDate);
+
+            // Xử lý sự kiện Âm Lịch (Tết Nguyên Đán)
             if (eventItem.type === "lunar" && typeof Lunar !== 'undefined') {
-                const year = dateObj.getFullYear();
-                const month = dateObj.getMonth() + 1;
-                const day = dateObj.getDate();
-                const lunar = Lunar.fromYmd(year, month, day);
-                const solar = lunar.getSolar();
-                return new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay(), dateObj.getHours(), dateObj.getMinutes());
+                let currentLunarYear = Lunar.fromDate(now).getYear();
+                
+                let lunarTet = Lunar.fromYmd(currentLunarYear, 1, 1);
+                let solarTet = lunarTet.getSolar();
+                let targetDate = new Date(solarTet.getYear(), solarTet.getMonth() - 1, solarTet.getDay(), originalDate.getHours(), originalDate.getMinutes());
+
+                if (targetDate.getTime() < now.getTime()) {
+                    lunarTet = Lunar.fromYmd(currentLunarYear + 1, 1, 1);
+                    solarTet = lunarTet.getSolar();
+                    targetDate = new Date(solarTet.getYear(), solarTet.getMonth() - 1, solarTet.getDay(), originalDate.getHours(), originalDate.getMinutes());
+                }
+                return targetDate;
+            } 
+            
+            // Xử lý lặp lại hàng năm cho sự kiện Dương lịch
+            else {
+                let year = now.getFullYear();
+                let targetDate = new Date(year, originalDate.getMonth(), originalDate.getDate(), originalDate.getHours(), originalDate.getMinutes());
+
+                if (targetDate.getTime() < now.getTime()) {
+                    targetDate.setFullYear(year + 1);
+                }
+                return targetDate;
             }
-            return dateObj;
         }
 
         function updateTodayInfo() {
