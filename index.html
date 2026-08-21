@@ -150,7 +150,7 @@
             { id: 3, title: "Quốc Khánh Việt Nam", targetDate: "2026-09-02T00:00", type: "solar" }
         ];
         
-        let selectedEventId = Number(localStorage.getItem('selected_event_id')) || events[0].id;
+        let selectedEventId = null;
         let startDate = new Date();
 
         function toggleModal(modalId, show) {
@@ -174,16 +174,22 @@
             const container = document.getElementById("events-container");
             container.innerHTML = "";
 
-            events.forEach(item => {
+            // Sắp xếp danh sách hiển thị theo thứ tự thời gian diễn ra gần nhất
+            const now = new Date();
+            const sortedEvents = [...events].sort((a, b) => {
+                return getTargetDateObject(a).getTime() - getTargetDateObject(b).getTime();
+            });
+
+            sortedEvents.forEach(item => {
                 const isSelected = item.id === selectedEventId;
+                const target = getTargetDateObject(item);
+                const formattedDate = `${String(target.getDate()).padStart(2, '0')}/${String(target.getMonth() + 1).padStart(2, '0')}/${target.getFullYear()} ${String(target.getHours()).padStart(2, '0')}:${String(target.getMinutes()).padStart(2, '0')}`;
+
                 const div = document.createElement("div");
                 div.className = `p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
                     isSelected ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800'
                 }`;
                 
-                const d = new Date(item.targetDate);
-                const formattedDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-
                 div.innerHTML = `
                     <div onclick="selectEvent(${item.id})" class="flex-1">
                         <div class="text-sm font-bold ${isSelected ? 'text-yellow-400' : 'text-slate-200'}">${item.title}</div>
@@ -199,7 +205,6 @@
 
         function selectEvent(id) {
             selectedEventId = id;
-            localStorage.setItem('selected_event_id', id);
             startDate = new Date();
             toggleModal('list-modal', false);
             updateTodayInfo();
@@ -231,11 +236,10 @@
             };
 
             events.push(newEvent);
-            selectedEventId = newEvent.id;
-            startDate = new Date();
-            
             localStorage.setItem('countdown_events', JSON.stringify(events));
-            localStorage.setItem('selected_event_id', selectedEventId);
+
+            autoSelectNearestEvent();
+            startDate = new Date();
 
             toggleModal('add-modal', false);
             updateTodayInfo();
@@ -245,18 +249,40 @@
         function deleteEvent(e, id) {
             e.stopPropagation();
             events = events.filter(item => item.id !== id);
-            if (selectedEventId === id) {
-                selectedEventId = events[0].id;
-            }
             localStorage.setItem('countdown_events', JSON.stringify(events));
-            localStorage.setItem('selected_event_id', selectedEventId);
+            
+            autoSelectNearestEvent();
             renderEventList();
             updateTodayInfo();
             updateCountdown();
         }
 
         function getActiveEvent() {
+            if (!selectedEventId) {
+                autoSelectNearestEvent();
+            }
             return events.find(item => item.id === selectedEventId) || events[0];
+        }
+
+        // Tự động tìm sự kiện có mốc thời gian diễn ra gần nhất trong tương lai
+        function autoSelectNearestEvent() {
+            if (!events || events.length === 0) return;
+            
+            const now = new Date().getTime();
+            let nearestEvent = events[0];
+            let minDiff = Infinity;
+
+            events.forEach(item => {
+                const targetTime = getTargetDateObject(item).getTime();
+                const diff = targetTime - now;
+
+                if (diff > 0 && diff < minDiff) {
+                    minDiff = diff;
+                    nearestEvent = item;
+                }
+            });
+
+            selectedEventId = nearestEvent.id;
         }
 
         function getTargetDateObject(eventItem) {
@@ -330,12 +356,18 @@
             const target = getTargetDateObject(activeEvent);
             const diff = target.getTime() - now.getTime();
 
+            // Nếu sự kiện vừa diễn ra xong, tự động cập nhật lại sang sự kiện gần nhất tiếp theo
             if (diff <= 0) {
                 document.getElementById("days").innerText = "00";
                 document.getElementById("hours").innerText = "00";
                 document.getElementById("minutes").innerText = "00";
                 document.getElementById("seconds").innerText = "00";
                 document.getElementById("progress-bar").style.width = "100%";
+                
+                setTimeout(() => {
+                    autoSelectNearestEvent();
+                    updateTodayInfo();
+                }, 1000);
                 return;
             }
 
@@ -355,6 +387,7 @@
             document.getElementById("progress-bar").style.width = `${pct}%`;
         }
 
+        autoSelectNearestEvent();
         updateTodayInfo();
         setInterval(updateCountdown, 1000);
         updateCountdown();
