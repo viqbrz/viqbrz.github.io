@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đếm Ngược Sự Kiện</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Thư viện Âm Lịch Việt Nam -->
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.8/lunar.min.js"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Header Thông Tin Hôm Nay -->
+    <div id="header-info" class="bg-slate-800/80 p-4 rounded-xl mb-6 text-center shadow-lg border border-slate-700 w-full max-w-md">
+        <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Hôm nay</div>
+        <div id="solar-date" class="text-lg font-bold text-yellow-400">--/--/----</div>
+        <div id="lunar-date" class="text-sm text-gray-300">Âm lịch: --</div>
+    </div>
+
+    <!-- Khối Đếm Ngược -->
+    <div class="text-center w-full max-w-md">
+        <h2 id="event-title" class="text-xl font-bold mb-4 text-slate-200">Sắp đến Tết Nguyên Đán</h2>
+        
+        <div class="grid grid-cols-4 gap-2 mb-6">
+            <div class="bg-yellow-500 text-slate-950 p-3 rounded-xl flex flex-col items-center">
+                <span id="days" class="text-3xl font-black">00</span>
+                <span class="text-[10px] font-bold">NGÀY</span>
+            </div>
+            <div class="bg-slate-800 p-3 rounded-xl flex flex-col items-center border border-slate-700">
+                <span id="hours" class="text-3xl font-black">00</span>
+                <span class="text-[10px] text-gray-400 font-bold">GIỜ</span>
+            </div>
+            <div class="bg-slate-800 p-3 rounded-xl flex flex-col items-center border border-slate-700">
+                <span id="minutes" class="text-3xl font-black">00</span>
+                <span class="text-[10px] text-gray-400 font-bold">PHÚT</span>
+            </div>
+            <div class="bg-slate-800 p-3 rounded-xl flex flex-col items-center border border-slate-700">
+                <span id="seconds" class="text-3xl font-black">00</span>
+                <span class="text-[10px] text-gray-400 font-bold">GIÂY</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ngày mục tiêu (Ví dụ: Tết Nguyên Đán tiếp theo)
+        const targetDate = new Date("2027-02-06T00:00:00").getTime();
+
+        // Cập nhật thông tin ngày hôm nay & Âm lịch
+        function updateTodayInfo() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            
+            document.getElementById("solar-date").innerText = `Dương lịch: ${d}/${m}/${y}`;
+
+            // Tính âm lịch bằng thư viện Lunar
+            if (typeof Lunar !== 'undefined') {
+                const lunar = Lunar.fromDate(now);
+                document.getElementById("lunar-date").innerText = 
+                    `Âm lịch: ${lunar.getDay()}/${lunar.getMonth()} - ${lunar.getYearInGanZhi()} ${lunar.getYearShengXiao()}`;
+            }
+        }
+
+        // Cập nhật bộ đếm ngược
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const diff = targetDate - now;
+
+            if (diff <= 0) return;
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerText = String(days).padStart(2, '0');
+            document.getElementById("hours").innerText = String(hours).padStart(2, '0');
+            document.getElementById("minutes").innerText = String(minutes).padStart(2, '0');
+            document.getElementById("seconds").innerText = String(seconds).padStart(2, '0');
+        }
+
+        updateTodayInfo();
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+    </script>
+</body>
+</html>
