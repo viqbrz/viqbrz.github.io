@@ -1,726 +1,1272 @@
 <!DOCTYPE html>
+
 <html lang="vi">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>Countdown</title>
 
+
+
     <meta name="apple-mobile-web-app-capable" content="yes">
+
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <meta name="apple-mobile-web-app-title" content="Countdown">
+
+
 
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693507.png">
 
+
+
     <!-- Tailwind CSS -->
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- Thư viện Âm Lịch Việt Nam -->
+
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.8/lunar.min.js"></script>
 
+
+
     <style>
+
         #space-canvas {
+
             position: fixed;
+
             top: 0;
+
             left: 0;
+
             width: 100vw;
+
             height: 100vh;
+
             z-index: 0;
+
             pointer-events: none;
+
         }
+
     </style>
+
 </head>
+
 <body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8 select-none relative overflow-x-hidden">
+
+
 
     <canvas id="space-canvas"></canvas>
 
+
+
     <div class="relative z-10 w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl my-auto flex flex-col items-center">
-        
-        <!-- Header: Thông Tin Hôm Nay & Nút Kích Hoạt Thông Báo -->
-        <div id="header-info" class="w-full bg-slate-900/80 backdrop-blur-md p-3 sm:p-5 rounded-2xl mb-6 text-center shadow-2xl border border-slate-800/80 relative">
+
+       
+
+        <!-- Header: Thông Tin Hôm Nay -->
+
+        <div id="header-info" class="w-full bg-slate-900/80 backdrop-blur-md p-3 sm:p-5 rounded-2xl mb-6 text-center shadow-2xl border border-slate-800/80">
+
             <div class="text-[10px] sm:text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1">Hôm nay</div>
-            <div id="solar-date" class="text-base sm:text-xl font-bold text-yellow-400">Dương lịch: --/--/----</div>
+
+            <div id="solar-date" class="text-base sm:text-xl font-bold text-yellow-400">--/--/----</div>
+
             <div id="lunar-date" class="text-xs sm:text-base text-slate-300 mt-0.5">Âm lịch: --/--/----</div>
-            
-            <!-- Nút bật thông báo điện thoại -->
-            <button id="notify-btn" onclick="requestNotificationPermission()" class="mt-3 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-yellow-400 text-xs font-semibold rounded-lg border border-slate-700 transition-colors inline-flex items-center gap-1.5">
-                🔔 Bật thông báo điện thoại
-            </button>
-            <button onclick="testNotification()" class="mt-3 ml-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 transition-colors inline-flex items-center gap-1.5">
-                🧪 Thử thông báo
-            </button>
+
         </div>
+
+
 
         <!-- Khối Đếm Ngược Trung Tâm -->
+
         <div class="w-full text-center">
+
             <div class="flex items-center justify-center gap-2 mb-4">
+
                 <h2 id="event-title" class="text-lg sm:text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight drop-shadow-md">--</h2>
+
                 <button onclick="toggleModal('list-modal', true)" class="p-1.5 bg-slate-800/80 hover:bg-slate-700/80 text-yellow-400 rounded-lg transition-colors border border-slate-700 backdrop-blur-sm" title="Danh sách sự kiện">
+
                     📅
+
                 </button>
+
             </div>
-            
+
+           
+
             <div class="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
+
                 <div class="bg-yellow-500/90 backdrop-blur-md text-slate-950 p-2.5 sm:p-5 md:p-6 rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-yellow-500/20 border border-yellow-400/50">
+
                     <span id="days" class="text-2xl sm:text-5xl md:text-6xl font-black leading-none">00</span>
+
                     <span class="text-[9px] sm:text-xs md:text-sm font-bold mt-1 sm:mt-2">NGÀY</span>
+
                 </div>
+
                 <div class="bg-slate-900/80 backdrop-blur-md p-2.5 sm:p-5 md:p-6 rounded-2xl flex flex-col items-center justify-center border border-slate-800 shadow-xl">
+
                     <span id="hours" class="text-2xl sm:text-5xl md:text-6xl font-black leading-none">00</span>
+
                     <span class="text-[9px] sm:text-xs md:text-sm text-slate-400 font-bold mt-1 sm:mt-2">GIỜ</span>
+
                 </div>
+
                 <div class="bg-slate-900/80 backdrop-blur-md p-2.5 sm:p-5 md:p-6 rounded-2xl flex flex-col items-center justify-center border border-slate-800 shadow-xl">
+
                     <span id="minutes" class="text-2xl sm:text-5xl md:text-6xl font-black leading-none">00</span>
+
                     <span class="text-[9px] sm:text-xs md:text-sm text-slate-400 font-bold mt-1 sm:mt-2">PHÚT</span>
+
                 </div>
+
                 <div class="bg-slate-900/80 backdrop-blur-md p-2.5 sm:p-5 md:p-6 rounded-2xl flex flex-col items-center justify-center border border-slate-800 shadow-xl">
+
                     <span id="seconds" class="text-2xl sm:text-5xl md:text-6xl font-black leading-none">00</span>
+
                     <span class="text-[9px] sm:text-xs md:text-sm text-slate-400 font-bold mt-1 sm:mt-2">GIÂY</span>
+
                 </div>
+
             </div>
+
+
 
             <div class="w-full bg-slate-900/80 h-2 sm:h-3 rounded-full overflow-hidden border border-slate-800 p-0.5 backdrop-blur-sm">
+
                 <div id="progress-bar" class="bg-yellow-500 h-full rounded-full transition-all duration-1000 w-0"></div>
+
             </div>
+
         </div>
 
-        <!-- Thông Tin Ngày Diễn Ra Sự Kiện -->
+
+
         <div class="w-full grid grid-cols-2 gap-3 mt-6 sm:mt-10 text-xs sm:text-sm text-slate-400 bg-slate-900/60 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-slate-800/80">
+
             <div>Dương lịch: <span id="target-solar" class="text-slate-200 font-semibold">--/--/----</span></div>
+
             <div class="text-right">Âm lịch: <span id="target-lunar" class="text-slate-200 font-semibold">--/--/----</span></div>
+
         </div>
+
+
 
     </div>
+
+
 
     <!-- BOX MODAL 1: DANH SÁCH SỰ KIỆN -->
+
     <div id="list-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl flex flex-col max-h-[80vh]">
+
             <div class="flex justify-between items-center mb-4">
+
                 <h3 class="text-lg font-bold text-white">Danh sách sự kiện</h3>
+
                 <button onclick="toggleModal('list-modal', false)" class="text-slate-400 hover:text-white">✕</button>
+
             </div>
-            
+
+           
+
             <div id="events-container" class="space-y-2 overflow-y-auto pr-1 my-2 flex-1">
+
             </div>
+
+
 
             <div class="pt-4 border-t border-slate-800 flex justify-between gap-2">
+
                 <button onclick="openAddModal()" class="w-full py-2.5 bg-yellow-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-yellow-400 flex items-center justify-center gap-1">
+
                     <span>+</span> Thêm sự kiện mới
+
                 </button>
+
             </div>
+
         </div>
+
     </div>
+
+
 
     <!-- BOX MODAL 2: FORM THÊM SỰ KIỆN -->
+
     <div id="add-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl">
+
             <h3 class="text-lg font-bold text-white mb-4">Tạo sự kiện mới</h3>
-            
+
+           
+
             <form id="event-form" onsubmit="addNewEvent(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Tên sự kiện</label>
-                    <input type="text" id="input-title" required placeholder="Ví dụ: Sinh nhật, Kỷ niệm..." 
-                        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
-                </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Loại lịch</label>
-                    <select id="input-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
-                        <option value="solar">Dương lịch</option>
-                        <option value="lunar">Âm lịch</option>
-                    </select>
+
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Tên sự kiện</label>
+
+                    <input type="text" id="input-title" required placeholder="Ví dụ: Sinh nhật, Kỷ niệm..."
+
+                        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
+
                 </div>
+
+
+
+                <div>
+
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Loại lịch</label>
+
+                    <select id="input-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
+
+                        <option value="solar">Dương lịch</option>
+
+                        <option value="lunar">Âm lịch</option>
+
+                    </select>
+
+                </div>
+
+
 
                 <div class="grid grid-cols-3 gap-2">
+
                     <div class="col-span-2">
+
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Ngày diễn ra (dd/mm/yyyy)</label>
+
                         <input type="text" id="input-date-str" required placeholder="15/05/2027" pattern="\d{1,2}/\d{1,2}/\d{4}" title="Vui lòng nhập định dạng dd/mm/yyyy"
+
                             class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
+
                     </div>
+
                     <div>
+
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Giờ</label>
+
                         <input type="time" id="input-time" value="00:00"
+
                             class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
+
                     </div>
+
                 </div>
+
+
 
                 <div class="flex justify-end gap-2 pt-2">
+
                     <button type="button" onclick="toggleModal('add-modal', false)" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-700">Hủy</button>
+
                     <button type="submit" class="px-4 py-2 bg-yellow-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-yellow-400">Tạo mới</button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
 
+
+
     <!-- LOGIC XỬ LÝ CHÍNH -->
+
     <script>
+
         const GAN_MAP = { '甲': 'Giáp', '乙': 'Ất', '丙': 'Bính', '丁': 'Đinh', '戊': 'Mậu', '己': 'Kỷ', '庚': 'Canh', '辛': 'Tân', '壬': 'Nhâm', '癸': 'Quý' };
+
         const ZHI_MAP = { '子': 'Tý', '丑': 'Sửu', '寅': 'Dần', '卯': 'Mão', '辰': 'Thìn', '巳': 'Tỵ', '午': 'Ngọ', '未': 'Mùi', '申': 'Thân', '酉': 'Dậu', '戌': 'Tuất', '亥': 'Hợi' };
 
+
+
         function translateGanZhi(cnGanZhi) {
+
             if (!cnGanZhi || cnGanZhi.length < 2) return cnGanZhi;
+
             const gan = GAN_MAP[cnGanZhi[0]] || cnGanZhi[0];
+
             const zhi = ZHI_MAP[cnGanZhi[1]] || cnGanZhi[1];
+
             return `${gan} ${zhi}`;
+
         }
+
+
 
         const defaultEvents = [
+
             { id: 1, title: "Tết Dương Lịch", targetDate: "2027-01-01T00:00", type: "solar" },
+
             { id: 2, title: "Tết Nguyên Đán", targetDate: "2027-01-01T00:00", type: "lunar" },
+
             { id: 3, title: "Giỗ Tổ Hùng Vương", targetDate: "2027-03-10T00:00", type: "lunar" },
+
             { id: 4, title: "Ngày Giải Phóng Miền Nam", targetDate: "2027-04-30T00:00", type: "solar" },
+
             { id: 5, title: "Ngày Quốc Tế Lao Động", targetDate: "2027-05-01T00:00", type: "solar" },
+
             { id: 6, title: "Ngày Quốc Khánh Việt Nam", targetDate: "2026-09-02T00:00", type: "solar" }
+
         ];
 
+
+
         let events = JSON.parse(localStorage.getItem('countdown_events')) || defaultEvents;
-        
+
+       
+
         let selectedEventId = null;
+
         let startDate = new Date();
+
         let isFireworksActive = false;
+
         let fireworksEndTime = 0;
-        let notifiedEvents = {}; 
 
-        // ĐĂNG KÝ SERVICE WORKER TỰ ĐỘNG
-        let swRegistration = null;
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('push', function(event) {
-                    const data = event.data ? event.data.json() : {};
-                    const title = data.title || 'Đếm ngược hoàn tất!';
-                    const options = {
-                        body: data.body || 'Sự kiện của bạn đã diễn ra.',
-                        icon: 'https://cdn-icons-png.flaticon.com/512/2693/2693507.png',
-                        vibrate: [200, 100, 200]
-                    };
-                    event.waitUntil(self.registration.showNotification(title, options));
-                });
-            `;
-            const blob = new Blob([swCode], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(swUrl).then(reg => {
-                swRegistration = reg;
-            }).catch(err => console.log('SW register fail:', err));
-        }
 
-        // CẤP QUYỀN THÔNG BÁO (NOTIFICATION)
-        function requestNotificationPermission() {
-            if (!("Notification" in window)) {
-                alert("Trình duyệt này không hỗ trợ Notification.");
-                return;
-            }
-            Notification.requestPermission().then(permission => {
-                updateNotifyButtonUI(permission);
-                if (permission === "granted") {
-                    sendEventNotification("Thành công!", "Thông báo đã được bật thành công.");
-                }
-            });
-        }
-
-        function updateNotifyButtonUI(permission = Notification.permission) {
-            const btn = document.getElementById("notify-btn");
-            if (!btn) return;
-            if (permission === "granted") {
-                btn.innerText = "🔔 Thông báo: Đã bật";
-                btn.className = "mt-3 px-3 py-1.5 bg-emerald-950/80 text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-800 inline-flex items-center gap-1.5 cursor-default";
-                btn.onclick = null;
-            } else if (permission === "denied") {
-                btn.innerText = "🔕 Thông báo: Bị từ chối";
-                btn.className = "mt-3 px-3 py-1.5 bg-rose-950/80 text-rose-400 text-xs font-semibold rounded-lg border border-rose-800 inline-flex items-center gap-1.5 cursor-default";
-                btn.onclick = null;
-            }
-        }
-
-        function sendEventNotification(title, body) {
-            if ("Notification" in window && Notification.permission === "granted") {
-                const options = {
-                    body: body,
-                    icon: "https://cdn-icons-png.flaticon.com/512/2693/2693507.png",
-                    vibrate: [200, 100, 200, 100, 200],
-                    requireInteraction: true
-                };
-
-                // Ưu tiên gửi qua Service Worker nếu có
-                if (swRegistration && swRegistration.showNotification) {
-                    swRegistration.showNotification(title, options);
-                } else {
-                    new Notification(title, options);
-                }
-            }
-        }
-
-        function testNotification() {
-            if (Notification.permission !== 'granted') {
-                alert("Bạn chưa bật quyền thông báo! Hãy bấm 'Bật thông báo điện thoại' trước.");
-            } else {
-                sendEventNotification("KÍCH HOẠT THỬ NGHỆM", "Đây là thông báo thử nghiệm từ đồng hồ đếm ngược!");
-            }
-        }
 
         function toggleModal(modalId, show) {
+
             const modal = document.getElementById(modalId);
+
             if (show) {
+
                 if (modalId === 'list-modal') renderEventList();
+
                 modal.classList.remove("hidden");
+
             } else {
+
                 modal.classList.add("hidden");
+
             }
+
         }
+
+
 
         function openAddModal() {
+
             toggleModal('list-modal', false);
+
             document.getElementById("event-form").reset();
+
             document.getElementById("input-time").value = "00:00";
+
             toggleModal('add-modal', true);
+
         }
+
+
 
         function renderEventList() {
+
             const container = document.getElementById("events-container");
+
             container.innerHTML = "";
 
+
+
             const sortedEvents = [...events].sort((a, b) => {
+
                 return getTargetDateObject(a).getTime() - getTargetDateObject(b).getTime();
+
             });
+
+
 
             sortedEvents.forEach(item => {
+
                 const isSelected = item.id === selectedEventId;
+
                 const targetSolar = getTargetDateObject(item);
-                
+
+               
+
                 let formattedDate = "";
-                
+
+               
+
                 if (item.type === 'lunar') {
+
+                    // Hiển thị chuẩn Ngày/Tháng/Năm Âm Lịch cho sự kiện Âm lịch
+
                     const origDate = new Date(item.targetDate);
+
                     const lunarDay = String(origDate.getDate()).padStart(2, '0');
+
                     const lunarMonth = String(origDate.getMonth() + 1).padStart(2, '0');
-                    
+
+                   
+
+                    // Xác định năm Âm lịch tương ứng với mốc Dương lịch đã tính
+
                     let targetLunarYear = targetSolar.getFullYear();
+
                     if (typeof Lunar !== 'undefined') {
+
                         targetLunarYear = Lunar.fromDate(targetSolar).getYear();
+
                     }
 
+
+
                     const hours = String(origDate.getHours()).padStart(2, '0');
+
                     const minutes = String(origDate.getMinutes()).padStart(2, '0');
 
+
+
                     formattedDate = `${lunarDay}/${lunarMonth}/${targetLunarYear} ${hours}:${minutes}`;
+
                 } else {
+
+                    // Hiển thị chuẩn Ngày/Tháng/Năm Dương Lịch
+
                     const day = String(targetSolar.getDate()).padStart(2, '0');
+
                     const month = String(targetSolar.getMonth() + 1).padStart(2, '0');
+
                     const year = targetSolar.getFullYear();
+
                     const hours = String(targetSolar.getHours()).padStart(2, '0');
+
                     const minutes = String(targetSolar.getMinutes()).padStart(2, '0');
 
+
+
                     formattedDate = `${day}/${month}/${year} ${hours}:${minutes}`;
+
                 }
+
+
 
                 const div = document.createElement("div");
+
                 div.className = `p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
+
                     isSelected ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800'
+
                 }`;
-                
+
+               
+
                 div.innerHTML = `
+
                     <div onclick="selectEvent(${item.id})" class="flex-1">
+
                         <div class="text-sm font-bold ${isSelected ? 'text-yellow-400' : 'text-slate-200'}">${item.title}</div>
+
                         <div class="text-[10px] text-slate-400">${item.type === 'lunar' ? 'Âm lịch' : 'Dương lịch'}: ${formattedDate}</div>
+
                     </div>
+
                     ${events.length > 1 ? `
+
                         <button onclick="deleteEvent(event, ${item.id})" class="text-xs text-slate-500 hover:text-red-400 px-2 py-1">Xóa</button>
+
                     ` : ''}
+
                 `;
+
                 container.appendChild(div);
+
             });
+
         }
+
+
 
         function selectEvent(id) {
+
             selectedEventId = id;
+
             startDate = new Date();
+
             toggleModal('list-modal', false);
+
             updateTodayInfo();
+
             updateCountdown();
+
         }
+
+
 
         function addNewEvent(e) {
+
             e.preventDefault();
+
             const dateStr = document.getElementById("input-date-str").value.trim();
+
             const timeStr = document.getElementById("input-time").value || "00:00";
-            
+
+           
+
             const parts = dateStr.split('/');
+
             if (parts.length !== 3) {
+
                 alert("Vui lòng nhập ngày theo định dạng dd/mm/yyyy");
+
                 return;
+
             }
+
+
 
             const day = String(parts[0]).padStart(2, '0');
+
             const month = String(parts[1]).padStart(2, '0');
+
             const year = parts[2];
 
+
+
             const newEvent = {
+
                 id: Date.now(),
+
                 title: document.getElementById("input-title").value,
+
                 targetDate: `${year}-${month}-${day}T${timeStr}`,
+
                 type: document.getElementById("input-type").value
+
             };
 
+
+
             events.push(newEvent);
+
             localStorage.setItem('countdown_events', JSON.stringify(events));
 
+
+
             autoSelectNearestEvent();
+
             startDate = new Date();
 
+
+
             toggleModal('add-modal', false);
+
             updateTodayInfo();
+
             updateCountdown();
+
         }
+
+
 
         function deleteEvent(e, id) {
+
             e.stopPropagation();
+
             events = events.filter(item => item.id !== id);
+
             localStorage.setItem('countdown_events', JSON.stringify(events));
-            
+
+           
+
             autoSelectNearestEvent();
+
             renderEventList();
+
             updateTodayInfo();
+
             updateCountdown();
+
         }
+
+
 
         function getActiveEvent() {
+
             if (!selectedEventId) {
+
                 autoSelectNearestEvent();
+
             }
+
             return events.find(item => item.id === selectedEventId) || events[0];
+
         }
+
+
 
         function autoSelectNearestEvent(excludeId = null) {
+
             if (!events || events.length === 0) return;
-            
+
+           
+
             const now = new Date().getTime();
+
             let nearestEvent = null;
+
             let minDiff = Infinity;
 
+
+
             events.forEach(item => {
+
                 if (excludeId && item.id === excludeId) return;
 
+
+
                 const targetTime = getTargetDateObject(item).getTime();
+
                 const diff = targetTime - now;
 
+
+
                 if (diff > 0 && diff < minDiff) {
+
                     minDiff = diff;
+
                     nearestEvent = item;
+
                 }
+
             });
+
+
 
             if (!nearestEvent) {
+
                 nearestEvent = events.find(i => i.id !== excludeId) || events[0];
+
             }
+
+
 
             selectedEventId = nearestEvent.id;
+
         }
+
+
 
         function getTargetDateObject(eventItem) {
+
             const now = new Date();
+
             const originalDate = new Date(eventItem.targetDate);
 
+
+
             if (eventItem.type === "lunar" && typeof Lunar !== 'undefined') {
+
                 const origLunarDay = originalDate.getDate();
+
                 const origLunarMonth = originalDate.getMonth() + 1;
 
+
+
                 let currentLunarYear = Lunar.fromDate(now).getYear();
+
                 let lunarTarget = Lunar.fromYmd(currentLunarYear, origLunarMonth, origLunarDay);
+
                 let solarTarget = lunarTarget.getSolar();
-                
+
+               
+
                 let targetDate = new Date(
+
                     solarTarget.getYear(),
+
                     solarTarget.getMonth() - 1,
+
                     solarTarget.getDay(),
+
                     originalDate.getHours(),
+
                     originalDate.getMinutes()
+
                 );
 
+
+
                 if (targetDate.getTime() < now.getTime() - 60000) {
+
                     lunarTarget = Lunar.fromYmd(currentLunarYear + 1, origLunarMonth, origLunarDay);
+
                     solarTarget = lunarTarget.getSolar();
+
                     targetDate = new Date(
+
                         solarTarget.getYear(),
+
                         solarTarget.getMonth() - 1,
+
                         solarTarget.getDay(),
+
                         originalDate.getHours(),
+
                         originalDate.getMinutes()
+
                     );
+
                 }
+
                 return targetDate;
+
             } else {
+
                 let year = originalDate.getFullYear();
+
                 let targetDate = new Date(year, originalDate.getMonth(), originalDate.getDate(), originalDate.getHours(), originalDate.getMinutes());
 
+
+
                 if (targetDate.getTime() < now.getTime() - 60000) {
+
                     targetDate.setFullYear(now.getFullYear() + 1);
+
                 }
+
                 return targetDate;
+
             }
+
         }
+
+
 
         function updateTodayInfo() {
+
             const now = new Date();
+
             const d = String(now.getDate()).padStart(2, '0');
+
             const m = String(now.getMonth() + 1).padStart(2, '0');
+
             const y = now.getFullYear();
-            
+
+           
+
             document.getElementById("solar-date").innerText = `Dương lịch: ${d}/${m}/${y}`;
-            
+
+           
+
             const activeEvent = getActiveEvent();
+
             document.getElementById("event-title").innerText = activeEvent.title;
 
+
+
             if (typeof Lunar !== 'undefined') {
+
                 const lunar = Lunar.fromDate(now);
+
                 const lunarDay = String(lunar.getDay()).padStart(2, '0');
+
                 const lunarMonth = String(lunar.getMonth()).padStart(2, '0');
+
                 const lunarYearNum = lunar.getYear();
+
                 const lunarYearGanZhi = translateGanZhi(lunar.getYearInGanZhi());
 
-                document.getElementById("lunar-date").innerText = 
+
+
+                document.getElementById("lunar-date").innerText =
+
                     `Âm lịch: ${lunarDay}/${lunarMonth}/${lunarYearNum} - ${lunarYearGanZhi}`;
-                
+
+               
+
                 const target = getTargetDateObject(activeEvent);
+
                 const targetLunar = Lunar.fromDate(target);
+
                 const tLunarDay = String(targetLunar.getDay()).padStart(2, '0');
+
                 const tLunarMonth = String(targetLunar.getMonth()).padStart(2, '0');
+
                 const tLunarYearNum = targetLunar.getYear();
+
                 const tLunarYearGanZhi = translateGanZhi(targetLunar.getYearInGanZhi());
 
+
+
                 document.getElementById("target-solar").innerText = `${target.getDate()}/${target.getMonth()+1}/${target.getFullYear()}`;
+
                 document.getElementById("target-lunar").innerText = `${tLunarDay}/${tLunarMonth}/${tLunarYearNum} - ${tLunarYearGanZhi}`;
+
             }
+
         }
+
+
 
         function updateCountdown() {
+
             const now = new Date();
+
             const activeEvent = getActiveEvent();
+
             const target = getTargetDateObject(activeEvent);
+
             const diff = target.getTime() - now.getTime();
 
+
+
             if (diff <= 0) {
-                // Kích hoạt Pháo hoa
+
                 isFireworksActive = true;
+
                 fireworksEndTime = Date.now() + 5 * 60 * 1000;
 
-                // Bắn Notification
-                if (!notifiedEvents[activeEvent.id]) {
-                    sendEventNotification(`🎉 ĐÃ ĐẾN GIỜ: ${activeEvent.title}`, `Sự kiện "${activeEvent.title}" vừa diễn ra! Chúc mừng! 🎉🎉🎉`);
-                    notifiedEvents[activeEvent.id] = true;
-                }
+
 
                 autoSelectNearestEvent(activeEvent.id);
+
                 startDate = new Date();
+
                 updateTodayInfo();
+
                 return;
+
             }
+
+
 
             if (isFireworksActive && Date.now() >= fireworksEndTime) {
+
                 isFireworksActive = false;
+
             }
+
+
 
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
+
+
             document.getElementById("days").innerText = String(days).padStart(2, '0');
+
             document.getElementById("hours").innerText = String(hours).padStart(2, '0');
+
             document.getElementById("minutes").innerText = String(minutes).padStart(2, '0');
+
             document.getElementById("seconds").innerText = String(seconds).padStart(2, '0');
 
+
+
             const total = target.getTime() - startDate.getTime();
+
             const elapsed = now.getTime() - startDate.getTime();
+
             const pct = Math.min(Math.max((elapsed / total) * 100, 0), 100);
+
             document.getElementById("progress-bar").style.width = `${pct}%`;
+
         }
+
+
 
         autoSelectNearestEvent();
+
         updateTodayInfo();
-        if ("Notification" in window) {
-            updateNotifyButtonUI(Notification.permission);
-        }
+
         setInterval(updateCountdown, 1000);
+
         updateCountdown();
+
     </script>
 
-    <!-- SCRIPT V VẼ NỀN VŨ TRỤ -->
+
+
+    <!-- SCRIPT VẼ NỀN VŨ TRỤ, SAO CHỔI VÀ PHÁO HOA -->
+
     <script>
+
         const canvas = document.getElementById("space-canvas");
+
         const ctx = canvas.getContext("2d");
 
+
+
         let width = canvas.width = window.innerWidth;
+
         let height = canvas.height = window.innerHeight;
 
+
+
         window.addEventListener("resize", () => {
+
             width = canvas.width = window.innerWidth;
+
             height = canvas.height = window.innerHeight;
+
             initStars();
+
         });
 
+
+
+        // 1. NGÔI SAO NHẤP NHÁY
+
         let stars = [];
+
         function initStars() {
+
             stars = [];
+
             const count = Math.floor((width * height) / 3000);
+
             for (let i = 0; i < count; i++) {
+
                 stars.push({
+
                     x: Math.random() * width,
+
                     y: Math.random() * height,
+
                     size: Math.random() * 1.5,
+
                     alpha: Math.random(),
+
                     speed: 0.005 + Math.random() * 0.015
+
                 });
+
             }
+
         }
+
         initStars();
 
+
+
+        // 2. SAO CHỔI
+
         let comets = [];
+
         function createComet() {
+
             if (comets.length < 2 && Math.random() < 0.03) {
+
                 comets.push({
+
                     x: Math.random() * width,
+
                     y: Math.random() * (height / 2),
+
                     length: 80 + Math.random() * 70,
+
                     speed: 8 + Math.random() * 6,
+
                     dx: 1,
+
                     dy: 0.6,
+
                     alpha: 1
+
                 });
+
             }
+
         }
+
+
+
+        // 3. PHÁO HOA
 
         let fireworks = [];
+
         let particles = [];
 
+
+
         class Firework {
+
             constructor() {
+
                 this.x = Math.random() * (width - 200) + 100;
+
                 this.y = height;
+
                 this.targetY = Math.random() * (height * 0.5) + 50;
+
                 this.speed = 4 + Math.random() * 4;
+
                 this.angle = Math.PI / 2;
+
                 this.hue = Math.floor(Math.random() * 360);
+
                 this.history = [];
+
             }
+
             update() {
+
                 this.history.push({ x: this.x, y: this.y });
+
                 if (this.history.length > 5) this.history.shift();
+
                 this.y -= this.speed;
+
                 if (this.y <= this.targetY) {
+
                     this.explode();
+
                     return true;
+
                 }
+
                 return false;
+
             }
+
             draw() {
+
                 ctx.beginPath();
+
                 ctx.strokeStyle = `hsl(${this.hue}, 100%, 70%)`;
+
                 ctx.lineWidth = 2;
+
                 if (this.history.length > 0) {
+
                     ctx.moveTo(this.history[0].x, this.history[0].y);
+
                     ctx.lineTo(this.x, this.y);
+
                 }
+
                 ctx.stroke();
+
             }
+
             explode() {
+
                 const count = 60 + Math.floor(Math.random() * 40);
+
                 for (let i = 0; i < count; i++) {
+
                     particles.push(new Particle(this.x, this.y, this.hue));
+
                 }
+
             }
+
         }
+
+
 
         class Particle {
+
             constructor(x, y, hue) {
+
                 this.x = x;
+
                 this.y = y;
+
                 this.hue = hue;
+
                 const angle = Math.random() * Math.PI * 2;
+
                 const speed = Math.random() * 6 + 1;
+
                 this.vx = Math.cos(angle) * speed;
+
                 this.vy = Math.sin(angle) * speed;
+
                 this.alpha = 1;
+
                 this.decay = 0.012 + Math.random() * 0.015;
+
                 this.gravity = 0.08;
+
             }
+
             update() {
+
                 this.vx *= 0.96;
+
                 this.vy *= 0.96;
+
                 this.vy += this.gravity;
+
                 this.x += this.vx;
+
                 this.y += this.vy;
+
                 this.alpha -= this.decay;
+
             }
+
             draw() {
+
                 ctx.save();
+
                 ctx.globalAlpha = Math.max(0, this.alpha);
+
                 ctx.beginPath();
+
                 ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+
                 ctx.fillStyle = `hsl(${this.hue}, 100%, 65%)`;
+
                 ctx.fill();
+
                 ctx.restore();
+
             }
+
         }
+
+
 
         function animate() {
+
             requestAnimationFrame(animate);
 
+
+
             ctx.fillStyle = "rgba(2, 6, 23, 0.25)";
+
             ctx.fillRect(0, 0, width, height);
 
+
+
             stars.forEach(s => {
+
                 s.alpha += s.speed;
+
                 if (s.alpha > 1 || s.alpha < 0) s.speed = -s.speed;
+
                 ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(s.alpha)})`;
+
                 ctx.fillRect(s.x, s.y, s.size, s.size);
+
             });
 
+
+
             createComet();
+
             for (let i = comets.length - 1; i >= 0; i--) {
+
                 const c = comets[i];
+
                 const endX = c.x - c.length * c.dx;
+
                 const endY = c.y - c.length * c.dy;
 
+
+
                 let grad = ctx.createLinearGradient(c.x, c.y, endX, endY);
+
                 grad.addColorStop(0, `rgba(255, 255, 255, ${c.alpha})`);
+
                 grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
+
+
                 ctx.beginPath();
+
                 ctx.strokeStyle = grad;
+
                 ctx.lineWidth = 1.5;
+
                 ctx.moveTo(c.x, c.y);
+
                 ctx.lineTo(endX, endY);
+
                 ctx.stroke();
 
+
+
                 c.x += c.speed * c.dx;
+
                 c.y += c.speed * c.dy;
+
                 c.alpha -= 0.008;
 
+
+
                 if (c.x > width || c.y > height || c.alpha <= 0) {
+
                     comets.splice(i, 1);
+
                 }
+
             }
+
+
 
             if (isFireworksActive) {
+
                 if (Math.random() < 0.08) {
+
                     fireworks.push(new Firework());
+
                 }
+
             }
+
+
 
             for (let i = fireworks.length - 1; i >= 0; i--) {
+
                 fireworks[i].draw();
+
                 if (fireworks[i].update()) {
+
                     fireworks.splice(i, 1);
+
                 }
+
             }
+
+
 
             for (let i = particles.length - 1; i >= 0; i--) {
+
                 particles[i].update();
+
                 particles[i].draw();
+
                 if (particles[i].alpha <= 0) {
+
                     particles.splice(i, 1);
+
                 }
+
             }
+
         }
 
+
+
         animate();
+
     </script>
+
 </body>
-</html>
+
+</html> 
+
