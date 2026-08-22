@@ -116,7 +116,7 @@
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Loại lịch</label>
                     <select id="input-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500">
                         <option value="solar">Dương lịch</option>
-                        <option value="lunar">Âm lịch (Tết Nguyên Đán)</option>
+                        <option value="lunar">Âm lịch</option>
                     </select>
                 </div>
 
@@ -153,10 +153,17 @@
             return `${gan} ${zhi}`;
         }
 
-        let events = JSON.parse(localStorage.getItem('countdown_events')) || [
-            { id: 1, title: "Tết Nguyên Đán", targetDate: "2027-02-06T00:00", type: "lunar" },
-            { id: 2, title: "Quốc Khánh Việt Nam", targetDate: "2026-09-02T00:00", type: "solar" }
+        // Khởi tạo danh sách mặc định bao gồm đầy đủ các Ngày Nghỉ Lễ Chính Thức theo luật
+        const defaultEvents = [
+            { id: 1, title: "Tết Dương Lịch", targetDate: "2027-01-01T00:00", type: "solar" },
+            { id: 2, title: "Tết Nguyên Đán", targetDate: "2027-01-01T00:00", type: "lunar" },
+            { id: 3, title: "Giỗ Tổ Hùng Vương", targetDate: "2027-03-10T00:00", type: "lunar" },
+            { id: 4, title: "Ngày Giải Phóng Miền Nam", targetDate: "2027-04-30T00:00", type: "solar" },
+            { id: 5, title: "Ngày Quốc Tế Lao Động", targetDate: "2027-05-01T00:00", type: "solar" },
+            { id: 6, title: "Ngày Quốc Khánh Việt Nam", targetDate: "2026-09-02T00:00", type: "solar" }
         ];
+
+        let events = JSON.parse(localStorage.getItem('countdown_events')) || defaultEvents;
         
         let selectedEventId = null;
         let startDate = new Date();
@@ -201,7 +208,7 @@
                 div.innerHTML = `
                     <div onclick="selectEvent(${item.id})" class="flex-1">
                         <div class="text-sm font-bold ${isSelected ? 'text-yellow-400' : 'text-slate-200'}">${item.title}</div>
-                        <div class="text-[10px] text-slate-400">${item.type === 'lunar' ? 'Âm lịch (Tết)' : 'Dương lịch'}: ${formattedDate}</div>
+                        <div class="text-[10px] text-slate-400">${item.type === 'lunar' ? 'Âm lịch' : 'Dương lịch'}: ${formattedDate}</div>
                     </div>
                     ${events.length > 1 ? `
                         <button onclick="deleteEvent(event, ${item.id})" class="text-xs text-slate-500 hover:text-red-400 px-2 py-1">Xóa</button>
@@ -301,21 +308,37 @@
             const originalDate = new Date(eventItem.targetDate);
 
             if (eventItem.type === "lunar" && typeof Lunar !== 'undefined') {
+                const origLunarDay = originalDate.getDate();
+                const origLunarMonth = originalDate.getMonth() + 1;
+
                 let currentLunarYear = Lunar.fromDate(now).getYear();
-                let lunarTet = Lunar.fromYmd(currentLunarYear, 1, 1);
-                let solarTet = lunarTet.getSolar();
-                let targetDate = new Date(solarTet.getYear(), solarTet.getMonth() - 1, solarTet.getDay(), originalDate.getHours(), originalDate.getMinutes());
+                let lunarTarget = Lunar.fromYmd(currentLunarYear, origLunarMonth, origLunarDay);
+                let solarTarget = lunarTarget.getSolar();
                 
+                let targetDate = new Date(
+                    solarTarget.getYear(),
+                    solarTarget.getMonth() - 1,
+                    solarTarget.getDay(),
+                    originalDate.getHours(),
+                    originalDate.getMinutes()
+                );
+
                 if (targetDate.getTime() < now.getTime() - 60000) {
-                    lunarTet = Lunar.fromYmd(currentLunarYear + 1, 1, 1);
-                    solarTet = lunarTet.getSolar();
-                    targetDate = new Date(solarTet.getYear(), solarTet.getMonth() - 1, solarTet.getDay(), originalDate.getHours(), originalDate.getMinutes());
+                    lunarTarget = Lunar.fromYmd(currentLunarYear + 1, origLunarMonth, origLunarDay);
+                    solarTarget = lunarTarget.getSolar();
+                    targetDate = new Date(
+                        solarTarget.getYear(),
+                        solarTarget.getMonth() - 1,
+                        solarTarget.getDay(),
+                        originalDate.getHours(),
+                        originalDate.getMinutes()
+                    );
                 }
                 return targetDate;
             } else {
                 let year = originalDate.getFullYear();
                 let targetDate = new Date(year, originalDate.getMonth(), originalDate.getDate(), originalDate.getHours(), originalDate.getMinutes());
-                
+
                 if (targetDate.getTime() < now.getTime() - 60000) {
                     targetDate.setFullYear(now.getFullYear() + 1);
                 }
