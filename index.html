@@ -153,7 +153,6 @@
             return `${gan} ${zhi}`;
         }
 
-        // Khởi tạo danh sách mặc định bao gồm đầy đủ các Ngày Nghỉ Lễ Chính Thức theo luật
         const defaultEvents = [
             { id: 1, title: "Tết Dương Lịch", targetDate: "2027-01-01T00:00", type: "solar" },
             { id: 2, title: "Tết Nguyên Đán", targetDate: "2027-01-01T00:00", type: "lunar" },
@@ -197,8 +196,36 @@
 
             sortedEvents.forEach(item => {
                 const isSelected = item.id === selectedEventId;
-                const target = getTargetDateObject(item);
-                const formattedDate = `${String(target.getDate()).padStart(2, '0')}/${String(target.getMonth() + 1).padStart(2, '0')}/${target.getFullYear()} ${String(target.getHours()).padStart(2, '0')}:${String(target.getMinutes()).padStart(2, '0')}`;
+                const targetSolar = getTargetDateObject(item);
+                
+                let formattedDate = "";
+                
+                if (item.type === 'lunar') {
+                    // Hiển thị chuẩn Ngày/Tháng/Năm Âm Lịch cho sự kiện Âm lịch
+                    const origDate = new Date(item.targetDate);
+                    const lunarDay = String(origDate.getDate()).padStart(2, '0');
+                    const lunarMonth = String(origDate.getMonth() + 1).padStart(2, '0');
+                    
+                    // Xác định năm Âm lịch tương ứng với mốc Dương lịch đã tính
+                    let targetLunarYear = targetSolar.getFullYear();
+                    if (typeof Lunar !== 'undefined') {
+                        targetLunarYear = Lunar.fromDate(targetSolar).getYear();
+                    }
+
+                    const hours = String(origDate.getHours()).padStart(2, '0');
+                    const minutes = String(origDate.getMinutes()).padStart(2, '0');
+
+                    formattedDate = `${lunarDay}/${lunarMonth}/${targetLunarYear} ${hours}:${minutes}`;
+                } else {
+                    // Hiển thị chuẩn Ngày/Tháng/Năm Dương Lịch
+                    const day = String(targetSolar.getDate()).padStart(2, '0');
+                    const month = String(targetSolar.getMonth() + 1).padStart(2, '0');
+                    const year = targetSolar.getFullYear();
+                    const hours = String(targetSolar.getHours()).padStart(2, '0');
+                    const minutes = String(targetSolar.getMinutes()).padStart(2, '0');
+
+                    formattedDate = `${day}/${month}/${year} ${hours}:${minutes}`;
+                }
 
                 const div = document.createElement("div");
                 div.className = `p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
@@ -385,20 +412,16 @@
             const target = getTargetDateObject(activeEvent);
             const diff = target.getTime() - now.getTime();
 
-            // KHI BẮT ĐẦU VỀ 0 -> TỰ ĐỘNG CHUYỂN SỰ KIỆN VÀ KÍCH HOẠT PHÁO HOA
             if (diff <= 0) {
-                // 1. Kích hoạt bắn pháo hoa trong 5 phút
                 isFireworksActive = true;
-                fireworksEndTime = Date.now() + 5 * 60 * 1000; // 5 Phút (300.000 ms)
+                fireworksEndTime = Date.now() + 5 * 60 * 1000;
 
-                // 2. Lập tức tự động chuyển sang sự kiện gần nhất tiếp theo
                 autoSelectNearestEvent(activeEvent.id);
                 startDate = new Date();
                 updateTodayInfo();
                 return;
             }
 
-            // Tắt hiệu ứng pháo hoa khi hết 5 phút
             if (isFireworksActive && Date.now() >= fireworksEndTime) {
                 isFireworksActive = false;
             }
